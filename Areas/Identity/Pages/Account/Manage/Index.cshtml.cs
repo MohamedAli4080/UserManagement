@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
@@ -60,7 +61,7 @@ namespace UserManagement.Areas.Identity.Pages.Account.Manage
                 PhoneNumber = phoneNumber,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                ProfilePicture=user.ProfilePicture
+                ProfilePicture = user.ProfilePicture
             };
         }
 
@@ -103,9 +104,19 @@ namespace UserManagement.Areas.Identity.Pages.Account.Manage
             }
             user.FirstName = Input.FirstName;
             user.LastName = Input.LastName;
-            
-            await _userManager.UpdateAsync(user);
 
+            if (Request.Form.Files.Count > 0)
+            {
+                var file = Request.Form.Files.FirstOrDefault();
+                using (var ms = new MemoryStream())
+                {
+                    await file.CopyToAsync(ms);
+                    user.ProfilePicture = ms.ToArray();
+                }
+
+
+            }
+            await _userManager.UpdateAsync(user);
             await _signInManager.RefreshSignInAsync(user);
             StatusMessage = "Your profile has been updated";
             return RedirectToPage();
